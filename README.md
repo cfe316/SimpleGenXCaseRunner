@@ -1,0 +1,43 @@
+# CaseRunner
+
+A way to run a list of GenX cases as separate batch jobs.
+
+# How to start launching jobs:
+Ensure that the Julia module is loaded.
+
+> module load julia
+
+Run the case runner script.
+> julia caserunner.jl
+
+# How the template scheme works
+
+* One or more of the entries in the various .csv files are replaced by "special key" strings which take the form `__SPECIAL_Abcd__`, `__SPECIAL_xyz__`.
+* A csv file called `replacements.csv` has rows which correspond to a user-given case number and replacements for each of the special fields.
+* One special key field in the template folder corresponds to exactly one column in the replacements file. No duplicates.
+* The program will warn you if you have duplicates or incomplete matching of special keys with replacement files.
+
+## Details of the special key string
+* The string must start with `__SPECIAL_` and end with `__`.
+* Between the start and end groups there must be a key which does *not* contain an underscore.
+
+Good:
+`__SPECIAL_A__`, `__SPECIAL_cow1234__`.
+Bad:
+`__SPECIAL__`
+`__SPECIAL_THIS_is_BAD__`
+`__Akey__`
+
+# How the job scheme works
+One slurm batch job is associated with each case. 
+The batch script is located in the template folder, and is `jobscript.sh`. It is the same for each case.
+Cases go into the folder `Cases/case_[n]` where n is the user-supplied (positive integer) case number in the `replacements.csv` file. Cases can be ordered in any fashion.
+
+# Behavior
+If you re-run the `caserunner.jl` script it will skip over any cases for which `case_n` folders already exist. It report that they have been skipped.
+
+This allows the user to add new lines to the `replacements.csv` file: only the new rows will be run. 
+This also allows recovery if some runs did not complete, for example due to not enough time allocated in the batch script. If the user manually deletes them they can then modify the batch script in the template folder (to add more time) and re-run. This avoids having to destory or re-run *all* the cases.
+
+# Automated batch failure detection and re-starting
+This feature is not implemented.
