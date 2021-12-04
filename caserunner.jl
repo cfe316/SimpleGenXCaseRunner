@@ -17,6 +17,35 @@ replacements_df() = csv2dataframe(caserunner_replacementscsv())
 csv2dataframe(path::AbstractString) = CSV.read(path, header=1, DataFrame)
 dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
 
+# Change this variable. Valid entries are "BATCH" and "LOCAL"
+joblocation = "BATCH"
+
+function run_job(i)
+	if joblocation == "BATCH"
+		run_job_batch(i)
+	elseif joblocation == "LOCAL"
+		run_job_local(i)
+	else
+		error("The variable joblocation should be `BATCH` or `LOCAL`")
+	end
+end
+
+function run_job_local(i)
+    origdir = pwd()
+    path = case_folder_path(i)
+    path = joinpath(path, "Run.jl")
+    include(path)
+    cd(origdir)
+end
+
+function run_job_batch(i)
+    origdir = pwd()
+    path = case_folder_path(i)
+    cd(path)
+    run(`sbatch jobscript.sh`)
+    cd(origdir)
+end
+
 function files_to_check()
     all_entries = readdir(caserunner_templatefolder());
     return [f for f in all_entries if f[end-3:end] == ".csv"]
@@ -223,26 +252,6 @@ function replace_keys_in_folder(i::Int,
         path = joinpath(folder, f)
         replace_keys_in_file(path, replacements)
     end
-end
-
-function run_job(i)
-    run_job_batch(i)
-end
-
-function run_job_local(i)
-    origdir = pwd()
-    path = case_folder_path(i)
-    path = joinpath(path, "Run.jl")
-    include(path)
-    cd(origdir)
-end
-
-function run_job_batch(i)
-    origdir = pwd()
-    path = case_folder_path(i)
-    cd(path)
-    run(`sbatch jobscript.sh`)
-    cd(origdir)
 end
 
 

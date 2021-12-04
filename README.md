@@ -1,13 +1,13 @@
 # CaseRunner
 
-A way to run a list of GenX cases as separate batch jobs.
+A way to run a list of GenX cases as separate batch jobs, or in sequence as one job.
 
 # How to start launching jobs:
-Ensure that the Julia module is loaded.
+Ensure that the julia binary is available. (On a cluster, ensure that the Julia module is loaded.)
 
 > module load julia
 
-Run the case runner script.
+Starting from the CaseRunner directory, run the case runner script.
 > julia caserunner.jl
 
 # How the template scheme works
@@ -28,10 +28,41 @@ Bad:
 `__SPECIAL_THIS_is_BAD__`
 `__Akey__`
 
+## An example of replacements.csv and the corresponding templates in files
+
+`replacements.csv`
+```
+Case,  solarcost,    aFloat,  myFuel
+1,         10000,      0.02,      NG
+2,         20000,      0.04,      NG
+50,        30000,      0.06,  biogas
+```
+
+`template/Reserves.csv`
+```
+Reg_Req_Percent_Load, Reg_Req_Percent_VRE, Rsv_Req_Percent_Load, ...
+                0.01,  __SPECIAL_aFloat__,                0.033,
+```
+
+`template/Generators_data.csv`
+```
+    Resource,      Inv_Cost_per_MWyr,               Fuel, ...
+ natural_gas,                  23045, __SPECIAL_myFuel__,
+onshore_wind,                  84030,               None,
+    solar_pv,  __SPECIAL_solarcost__,               None,
+     battery,                  19034,               None,
+
+```
+
 # How the job scheme works
-One slurm batch job is associated with each case. 
+In batch mode, one slurm batch job is associated with each case.
 The batch script is located in the template folder, and is `jobscript.sh`. It is the same for each case.
 Cases go into the folder `Cases/case_[n]` where n is the user-supplied (positive integer) case number in the `replacements.csv` file. Cases can be ordered in any fashion.
+
+In local mode, cases are run one after the other. This may reduce loading times.
+
+## Switching between batch mode and local mode
+In `caserunner.jl` there's a variable near the top which is set to either `"BATCH"` or `"LOCAL"`.
 
 # Behavior
 If you re-run the `caserunner.jl` script it will skip over any cases for which `case_n` folders already exist. It report that they have been skipped.
@@ -39,5 +70,8 @@ If you re-run the `caserunner.jl` script it will skip over any cases for which `
 This allows the user to add new lines to the `replacements.csv` file: only the new rows will be run. 
 This also allows recovery if some runs did not complete, for example due to not enough time allocated in the batch script. If the user manually deletes them they can then modify the batch script in the template folder (to add more time) and re-run. This avoids having to destory or re-run *all* the cases.
 
-# Automated batch failure detection and re-starting
+# There is no automated job failure detection and re-starting
 This feature is not implemented.
+
+# No analysis features
+There are no post-run analysis features.
