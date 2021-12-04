@@ -200,16 +200,16 @@ end
 #--------------------------------------------
 # Functions to handle the replacements
 function get_replacement_names(df=replacements_df())
-    names(df[:, Not(:Case)])
+	names(df[:, Not([:Case, :Notes])])
 end
 
 function get_specific_replacements(i::Integer)
     df=replacements_df()
-    return df[df[:, :Case] .== i, Not(:Case)][1,:]
+	return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
 end
 
 function get_specific_replacements(df::DataFrame, i::Integer)
-    return df[df[:, :Case] .== i, Not(:Case)][1,:]
+	return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
 end
 
 function number_of_replacement_cases(df=replacements_df())

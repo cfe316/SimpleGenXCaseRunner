@@ -36,11 +36,12 @@ Bad:
 
 `replacements.csv`
 ```
-Case,  solarcost,    aFloat,  myFuel
-1,         10000,      0.02,      NG
-2,         20000,      0.04,      NG
-50,        30000,      0.06,  biogas
+Case,  solarcost,    aFloat,  myFuel, Notes
+1,         10000,      0.02,      NG, these notes are ignored
+2,         20000,      0.04,      NG, write whatever you want in the Notes column.
+50,        30000,      0.06,  biogas,
 ```
+The Notes column is optional. If there is a Notes column, commas may be required after all previous column entries.
 
 `template/Reserves.csv`
 ```
