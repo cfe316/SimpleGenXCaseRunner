@@ -1,6 +1,6 @@
 # CaseRunner
 
-A way to run a list of GenX cases as separate batch jobs, or in sequence as one job.
+A way to run a list of GenX cases as separate batch jobs, or locally in sequence as one job.
 
 # Invocation
 Ensure that the julia binary is available. (On a cluster, ensure that the Julia module is loaded.)
@@ -63,13 +63,14 @@ In batch mode, one slurm batch job is associated with each case.
 The batch script is located in the template folder, and is `jobscript.sh`. It is the same for each case.
 Cases go into the folder `Cases/case_[n]` where n is the user-supplied (positive integer) case number in the `replacements.csv` file. Cases can be ordered in any fashion.
 
-In local mode, cases are run one after the other. This may reduce loading times.
+In sequential mode, cases are run one after the other from the invocing node. This may reduce loading times and allows running cases locally. (This will fail if the local node lacks a solver license.)
 
-## Switching between batch mode and local mode
-In `caserunner.jl` there's a variable near the top which is set to either `"BATCH"` or `"LOCAL"`.
+## Switching between batch mode and sequential mode
+In `caserunner.jl` there's a variable near the top which is set to either `"BATCH"` or `"SEQUENTIAL"`.
+Running in sequential mode does not use the `jobscript.sh` file; you will need to ensure that the julia invocation includes the proper environment, such as `julia --project="/my/GenX/" caserunner.jl`.
 
 # Behavior
-If you re-run the `caserunner.jl` script it will skip over any cases for which `case_n` folders already exist. It report that they have been skipped.
+If you re-run the `caserunner.jl` script it will skip over any cases for which `case_n` folders already exist. It will report that they have been skipped.
 
 This allows the user to add new lines to the `replacements.csv` file: only the new rows will be run. 
 This also allows recovery if some runs did not complete, for example due to not enough time allocated in the batch script. If the user manually deletes them they can then modify the batch script in the template folder (to add more time) and re-run. This avoids having to destory or re-run *all* the cases.

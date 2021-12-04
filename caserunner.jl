@@ -23,14 +23,14 @@ joblocation = "BATCH"
 function run_job(i)
 	if joblocation == "BATCH"
 		run_job_batch(i)
-	elseif joblocation == "LOCAL"
-		run_job_local(i)
+	elseif joblocation == "SEQUENTIAL"
+		run_job_sequential(i)
 	else
-		error("The variable joblocation should be `BATCH` or `LOCAL`")
+		error("The variable joblocation should be `BATCH` or `SEQUENTIAL`")
 	end
 end
 
-function run_job_local(i)
+function run_job_sequential(i)
     origdir = pwd()
     path = case_folder_path(i)
     path = joinpath(path, "Run.jl")
