@@ -5,10 +5,14 @@ A way to run a list of GenX cases as separate batch jobs, or in sequence as one 
 # Invocation
 Ensure that the julia binary is available. (On a cluster, ensure that the Julia module is loaded.)
 
+```
 > module load julia
+```
 
 Starting from the CaseRunner directory, run the case runner script.
+```
 > julia caserunner.jl
+```
 
 # How the template scheme works
 
