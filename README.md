@@ -2,7 +2,7 @@
 
 A way to run a list of GenX cases as separate batch jobs, or in sequence as one job.
 
-# How to start launching jobs:
+# Invocation
 Ensure that the julia binary is available. (On a cluster, ensure that the Julia module is loaded.)
 
 > module load julia
