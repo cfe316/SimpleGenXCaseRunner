@@ -17,7 +17,7 @@ replacements_df() = csv2dataframe(caserunner_replacementscsv())
 csv2dataframe(path::AbstractString) = CSV.read(path, header=1, DataFrame)
 dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
 
-# Change this variable. Valid entries are "BATCH" and "LOCAL"
+# Change this variable. Valid entries are "BATCH" and "SEQUENTIAL"
 joblocation = "BATCH"
 
 function run_job(i)
