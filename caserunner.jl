@@ -7,6 +7,7 @@ caserunner_templatefolder() = "template"
 caserunner_jobscript() = "jobscript.sh"
 caserunner_replacementscsv() = "replacements.csv"
 main_case_folder() = "Cases"
+settingsfolder() = "Settings"
 
 results_name() = "Results"
 case_folder_name(i::Integer) = "case_" * string(i)
@@ -21,13 +22,13 @@ dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
 joblocation = "BATCH"
 
 function run_job(i)
-	if joblocation == "BATCH"
-		run_job_batch(i)
-	elseif joblocation == "SEQUENTIAL"
-		run_job_sequential(i)
-	else
-		error("The variable joblocation should be `BATCH` or `SEQUENTIAL`")
-	end
+    if joblocation == "BATCH"
+        run_job_batch(i)
+    elseif joblocation == "SEQUENTIAL"
+        run_job_sequential(i)
+    else
+        error("The variable joblocation should be `BATCH` or `SEQUENTIAL`")
+    end
 end
 
 function run_job_sequential(i)
@@ -47,6 +48,10 @@ function run_job_batch(i)
 end
 
 function files_to_check()
+    return csv_files_to_check()
+end
+
+function csv_files_to_check()
     all_entries = readdir(caserunner_templatefolder());
     return [f for f in all_entries if f[end-3:end] == ".csv"]
 end
@@ -64,6 +69,7 @@ function isspecialkey(s::AbstractString)
     if !test1 || !test2
         return false
     end
+
     elements = split(s, "_")
     nonblank_elements = [i for i in elements if i != ""]
     test3 = nonblank_elements[1] == caserunner_specialstring()
@@ -200,16 +206,16 @@ end
 #--------------------------------------------
 # Functions to handle the replacements
 function get_replacement_names(df=replacements_df())
-	names(df[:, Not([:Case, :Notes])])
+    names(df[:, Not([:Case, :Notes])])
 end
 
 function get_specific_replacements(i::Integer)
     df=replacements_df()
-	return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
+    return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
 end
 
 function get_specific_replacements(df::DataFrame, i::Integer)
-	return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
+    return df[df[:, :Case] .== i, Not([:Case, :Notes])][1,:]
 end
 
 function number_of_replacement_cases(df=replacements_df())
@@ -233,6 +239,11 @@ function replace_df_elements!(df::DataFrame, replacements::Dict)
     end
 end
 
+"""
+   `replace_df_elements`(path::AbstractString, replacements::DataFrameRow)
+
+Scans a csv file and overwrites it with replacements made.
+"""
 function replace_keys_in_file(path::AbstractString, replacements::DataFrameRow)
     df = csv2dataframe(path)
 
