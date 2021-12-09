@@ -1,5 +1,6 @@
 using CSV
 using DataFrames
+using YAML
 
 # Definitions of CaseRunner-specific strings
 caserunner_specialstring() = "SPECIAL"
@@ -17,6 +18,9 @@ replacements_df() = csv2dataframe(caserunner_replacementscsv())
 
 csv2dataframe(path::AbstractString) = CSV.read(path, header=1, DataFrame)
 dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
+
+yaml2dict(path::AbstractString) = YAML.load_file(path)
+dict2yaml(d::Dict, path::AbstractString) = YAML.write_file(path, d)
 
 # Change this variable. Valid entries are "BATCH" and "SEQUENTIAL"
 joblocation = "BATCH"
@@ -48,12 +52,39 @@ function run_job_batch(i)
 end
 
 function files_to_check()
-    return csv_files_to_check()
+    csvs = csv_files_to_check()
+    ymls = yaml_files_to_check()
+    return vcat(csvs, ymls)
+end
+
+"""
+   `redetermine_file_type`(path::AbstractString)
+
+Check that the file type is one of the known types.
+This should only be used on files that have already been checked;
+it's just a mixed list of various file types now.
+"""
+function redetermine_file_type(path)
+    last4 = path[end-3:end]
+    if last4 == ".csv"
+        return "csv"
+    elseif last4 == ".yml"
+        return "yml"
+    else
+        error("Unknown file type")
+    end
 end
 
 function csv_files_to_check()
     all_entries = readdir(caserunner_templatefolder());
     return [f for f in all_entries if f[end-3:end] == ".csv"]
+end
+
+function yaml_files_to_check()
+    tf = case_runner_templatefolder()
+    path = joinpath(tf, settingsfolder())
+    all_entries = readdir(path);
+    return [joinpath(path, f) for f in all_entries if f[end-3:end] == ".yml"]
 end
 
 #---------------------------------------
@@ -96,7 +127,25 @@ function check_element(e)
     end
 end
 
-function check_dataframe(df)
+"""
+   `check_datastructure`(d::Dict)
+
+Returns the list of special keys found in dictionary d
+"""
+function check_datastructure(d::Dict)
+    key_fields_found = String[]
+    for (key, value) in d
+        key_fields_found = vcat(key_fields_found, check_element(value))
+    end
+    return key_fields_found
+end
+
+"""
+   `check_datastructure`(d::DataFrame)
+
+Returns the list of special keys found in dictionary d
+"""
+function check_datastructure(df::DataFrame)
     key_fields_found = String[]
     for c in eachcol(df)
         for r in c
@@ -117,8 +166,15 @@ function check_file(name)
     if !isfile(path)
         error("$path is not a file and/or does not exist")
     else
-        df = csv2dataframe(path)
-        return check_dataframe(df)
+        ftype = redetermine_file_type(name)
+        if ftype == "csv"
+            data = csv2dataframe(path)
+        elseif ftype == "yml"
+            data = yml2dict(path)
+        else
+            error("Checking unknown file type.")
+        end
+        return check_datastructure(data)
     end
 end
 
@@ -223,12 +279,12 @@ function number_of_replacement_cases(df=replacements_df())
 end
 
 """
-   `replace_df_elements!`(df::DataFrame, replacements::Dict)
+   `replace_elements!`(df::DataFrame, replacements::Dict)
 
 Scans through a dataframe element by element and replaces any strings that appear
 in the dict keys with the corresponding values.
 """
-function replace_df_elements!(df::DataFrame, replacements::Dict)
+function replace_elements!(df::DataFrame, replacements::Dict)
     for ci in 1:size(df)[2]
         for ri in 1:size(df)[1]
             element = df[ri, ci]
@@ -240,19 +296,68 @@ function replace_df_elements!(df::DataFrame, replacements::Dict)
 end
 
 """
+   `replace_elements!`(d::Dict, replacements::Dict)
+
+Scans through a dict pair by pair and replaces any strings that appear
+in the dict values with the corresponding values from the replacement dict.
+"""
+function replace_elements!(d::Dict, replacements::Dict)
+    for (key, value) in d
+        if value in keys(replacements)
+            d[key] = replacements[value]
+        end
+    end
+end
+
+function dataframerow2dict(r::DataFrameRow)
+    replnames = string_to_specialkey.(names(r))
+    replvalues = values(r)
+    replacement_dict = Dict(zip(replnames, replvalues))
+    return replacement_dict
+end
+
+"""
+   `replace_keys_in_csv_file`(path::AbstractString, replacements::DataFrameRow)
+
+Scans a csv file and overwrites it with replacements made.
+"""
+function replace_keys_in_csv_file(path::AbstractString, replacements::DataFrameRow)
+    s = csv2dataframe(path)
+
+    replacement_dict = dataframerow2dict(replacements)
+    replace_elements!(s, replacement_dict)
+
+    dataframe2csv(s, path)
+end
+
+"""
+   `replace_keys_in_yml_file`(path::AbstractString, replacements::DataFrameRow)
+
+Scans a yml file and overwrites it with replacements made.
+"""
+function replace_keys_in_yml_file(path::AbstractString, replacements::DataFrameRow)
+    s = yml2dict(path)
+
+    replacement_dict = dataframerow2dict(replacements)
+    replace_elements!(s, replacement_dict)
+
+    dict2yml(s, path)
+end
+
+"""
    `replace_df_elements`(path::AbstractString, replacements::DataFrameRow)
 
 Scans a csv file and overwrites it with replacements made.
 """
 function replace_keys_in_file(path::AbstractString, replacements::DataFrameRow)
-    df = csv2dataframe(path)
-
-    replnames = string_to_specialkey.(names(replacements))
-    replvalues = values(replacements)
-    replacement_dict = Dict(zip(replnames, replvalues))
-
-    replace_df_elements!(df, replacement_dict)
-    dataframe2csv(df, path)
+    ftype = redetermine_file_type(path)
+    if ftype == "csv"
+        replace_keys_in_csv_file(path, replacements)
+    elseif ftype == "yml"
+        replace_keys_in_yml_file(path, replacements)
+    else
+        error("Unknown file type")
+    end
 end
 
 function replace_keys_in_folder(i::Int,
@@ -265,7 +370,7 @@ function replace_keys_in_folder(i::Int,
     end
 end
 
-
+# Case launching
 function launch_new_case(i::Integer, df::DataFrame, files_with_keys::Vector{String})
     copy_to_new_case_folder(i)
     replacements = get_specific_replacements(df, i)
