@@ -19,7 +19,7 @@ replacements_df() = csv2dataframe(caserunner_replacementscsv())
 csv2dataframe(path::AbstractString) = CSV.read(path, header=1, DataFrame)
 dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
 
-yaml2dict(path::AbstractString) = YAML.load_file(path)
+yml2dict(path::AbstractString) = YAML.load_file(path)
 dict2yaml(d::Dict, path::AbstractString) = YAML.write_file(path, d)
 
 # Change this variable. Valid entries are "BATCH" and "SEQUENTIAL"
@@ -81,10 +81,10 @@ function csv_files_to_check()
 end
 
 function yaml_files_to_check()
-    tf = case_runner_templatefolder()
+    tf = caserunner_templatefolder()
     path = joinpath(tf, settingsfolder())
     all_entries = readdir(path);
-    return [joinpath(path, f) for f in all_entries if f[end-3:end] == ".yml"]
+    return [joinpath(settingsfolder(), f) for f in all_entries if f[end-3:end] == ".yml"]
 end
 
 #---------------------------------------
