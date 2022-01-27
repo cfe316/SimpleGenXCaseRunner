@@ -20,7 +20,7 @@ csv2dataframe(path::AbstractString) = CSV.read(path, header=1, DataFrame)
 dataframe2csv(df::DataFrame, path::AbstractString) = CSV.write(path, df)
 
 yml2dict(path::AbstractString) = YAML.load_file(path)
-dict2yaml(d::Dict, path::AbstractString) = YAML.write_file(path, d)
+dict2yml(d::Dict, path::AbstractString) = YAML.write_file(path, d)
 
 # Change this variable. Valid entries are "BATCH" and "SEQUENTIAL"
 joblocation = "BATCH"
@@ -82,9 +82,10 @@ end
 
 function yaml_files_to_check()
     tf = caserunner_templatefolder()
-    path = joinpath(tf, settingsfolder())
+    sf = settingsfolder()
+    path = joinpath(tf, sf)
     all_entries = readdir(path);
-    return [joinpath(settingsfolder(), f) for f in all_entries if f[end-3:end] == ".yml"]
+    return [joinpath(sf, f) for f in all_entries if f[end-3:end] == ".yml"]
 end
 
 #---------------------------------------
@@ -215,7 +216,7 @@ end
 Throw an error if the keys found are not acceptable.
 """
 function flag_badkeys(key_fields_found::Vector{String}, replacements::Vector{String})
-    flag_dupekeys(key_fields_found)
+    #flag_dupekeys(key_fields_found)
     flag_nonmatchingkeys(key_fields_found, replacements)
 end
 
@@ -375,7 +376,7 @@ function launch_new_case(i::Integer, df::DataFrame, files_with_keys::Vector{Stri
     copy_to_new_case_folder(i)
     replacements = get_specific_replacements(df, i)
     replace_keys_in_folder(i, replacements, files_with_keys)
-    run_job(i)
+    #run_job(i)
 end
 
 function launch_new_cases()
